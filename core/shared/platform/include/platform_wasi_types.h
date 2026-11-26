@@ -17,6 +17,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#if defined(__EMSCRIPTEN__)
+#include "platform_wasi_types_emscripten.h"
+#endif
+
 /* clang-format off */
 
 #ifdef __cplusplus
