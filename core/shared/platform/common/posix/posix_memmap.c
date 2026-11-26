@@ -274,6 +274,15 @@ os_mprotect(void *addr, size_t size, int prot)
     if (!addr)
         return 0;
 
+#if defined(__EMSCRIPTEN__)
+    /* WebAssembly's memory has no protection, and Emscripten's mprotect
+       only warns that it isn't supported */
+    (void)prot;
+    (void)map_prot;
+    (void)request_size;
+    return 0;
+#endif
+
     if (prot & MMAP_PROT_READ)
         map_prot |= PROT_READ;
 

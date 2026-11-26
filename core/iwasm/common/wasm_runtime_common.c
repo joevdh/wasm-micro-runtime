@@ -5121,7 +5121,8 @@ wasm_runtime_invoke_native_raw(WASMExecEnv *exec_env, void *func_ptr,
                 if (!wasm_externref_ref2obj(externref_idx, &externref_obj))
                     goto fail;
 
-                bh_memcpy_s(argv_dst, sizeof(uintptr_t), argv_src,
+                /* The object the index refers to, not the next argument */
+                bh_memcpy_s(argv_dst, sizeof(uintptr_t), &externref_obj,
                             sizeof(uintptr_t));
                 break;
             }
@@ -6175,6 +6176,20 @@ wasm_runtime_invoke_native(WASMExecEnv *exec_env, void *func_ptr,
     bool ret = false;
 #if WASM_ENABLE_GC == 0 && WASM_ENABLE_REF_TYPES != 0
     bool is_aot_func = (NULL == signature);
+#endif
+#if defined(__EMSCRIPTEN__)
+    /* WebAssembly traps on a call through a pointer of another type, which
+       is how invokeNative calls a native: a host running in WebAssembly
+       registers its natives raw ( wasm_runtime_register_natives_raw ) */
+    (void)func_ptr;
+    (void)signature;
+    (void)attachment;
+    (void)argc;
+    (void)argv_ret;
+    wasm_runtime_set_exception(module,
+                               "a native function that isn't raw can't be "
+                               "called in WebAssembly");
+    return false;
 #endif
 #ifndef BUILD_TARGET_RISCV64_LP64
 #if WASM_ENABLE_SIMD == 0
